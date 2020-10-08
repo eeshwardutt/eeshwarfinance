@@ -1,0 +1,65 @@
+import pandas as pd  
+import numpy as np
+import matplotlib.pyplot as plt
+
+daily_returns=pd.read_csv('H:/Documents/MIPC/ukreturns2.csv',index_col="Date")
+mean_ret_norm=(((daily_returns.mean()+1)**252)-1)
+mean_ret=mean_ret_norm.transpose()
+
+matrix=np.random.rand(50000,7)
+matrix_df=pd.DataFrame(matrix,columns=daily_returns.columns)
+
+matrix_sum=matrix_df.sum(axis=1)
+
+weights=matrix_df.divide(matrix_sum,axis="rows")
+
+weights_t=np.transpose(weights)
+
+portfolio_return=np.dot(weights,mean_ret)
+
+#Variance covariance
+cov_mat = daily_returns.cov()
+portfolio_risk = []
+for one_port in range(weights.shape[0]):
+    
+    risk = (np.sqrt(np.dot(weights.iloc[one_port,:],np.dot(cov_mat,weights_t.iloc[:,one_port]))))*np.sqrt(252)
+    
+    portfolio_risk.append(risk)
+
+plt.figure(figsize = (20,15))
+plt.scatter(portfolio_risk, portfolio_return)
+
+plt.xlabel("Portfolio Risk - Standard Deviation")
+plt.ylabel("Portfolio Return")
+
+plt.show()
+
+daily_returns=pd.read_csv('H:/Documents/MIPC/ukreturns2.csv',index_col="Date")
+mean_excess_ret=(((daily_returns.mean()+1)**252)-1)-0.0075
+mean_excess_ret=mean_excess_ret.transpose()
+
+portfolio_excess_return=np.dot(weights,mean_excess_ret)
+
+
+#Variance covariance
+cov_mat = daily_returns.cov()
+portfolio_risk = []
+for one_port in range(weights.shape[0]):
+    
+    risk = (np.sqrt(np.dot(weights.iloc[one_port,:],np.dot(cov_mat,weights_t.iloc[:,one_port]))))*np.sqrt(252)
+    
+    portfolio_risk.append(risk)
+    
+plt.figure(figsize = (20,15))
+plt.scatter(portfolio_risk, portfolio_excess_return)
+
+plt.xlabel("Portfolio Risk - Standard Deviation")
+plt.ylabel("Portfolio Excess Return")
+
+plt.show()
+
+#get a csv file
+portfolio_risk = pd.DataFrame(portfolio_risk, columns = ["portfolio risk"])
+portfolio_return = pd.DataFrame(portfolio_return, columns = ["portfolio return"])
+random_portfolio = pd.concat([portfolio_return, portfolio_risk, weights], axis =1)
+random_portfolio.to_csv("Random_Portfolios_MSCI.csv")
