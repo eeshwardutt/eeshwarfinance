@@ -7,7 +7,7 @@ import matplotlib.cm as cm
 import seaborn as sns
 
 def get_data(dataname, start_year):
-    companies = pd.read_csv(r'C:\Users\eeshwar.dutt\OneDrive - RS Energy Group\Desktop\CPMT\Tickers.csv')
+    companies = pd.read_csv(r'insert file path here.csv')
     companies["Ticker"] = companies["Tickers"]
     companies = companies.set_index("Tickers")
     start_date, end_date = datetime.datetime(start_year, 1, 1), datetime.datetime.today()
