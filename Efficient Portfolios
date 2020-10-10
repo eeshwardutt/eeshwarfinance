@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-daily_returns=pd.read_csv('H:/Documents/MIPC/ukreturns2.csv',index_col="Date")
+daily_returns=pd.read_csv('insert file of daily returns here.csv',index_col="Date")
 mean_ret_norm=(((daily_returns.mean()+1)**252)-1)
 mean_ret=mean_ret_norm.transpose()
 
@@ -34,7 +34,7 @@ plt.ylabel("Portfolio Return")
 
 plt.show()
 
-daily_returns=pd.read_csv('H:/Documents/MIPC/ukreturns2.csv',index_col="Date")
+daily_returns=pd.read_csv('insert file of daily returns here.csv',index_col="Date")
 mean_excess_ret=(((daily_returns.mean()+1)**252)-1)-0.0075
 mean_excess_ret=mean_excess_ret.transpose()
 
