@@ -1,0 +1,129 @@
+import pandas as pd
+import pandas_datareader.data as web
+from pandas_datareader import data
+import datetime as dt
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
+from matplotlib import style
+from scipy.stats import norm
+
+
+cervus= data.DataReader('CERV.TO','yahoo',start=dt.datetime(2014,12,31))
+
+days = (cervus.index[-1] - cervus.index[0]).days
+cagr = ((((cervus['Adj Close'][-1]) / cervus['Adj Close'][0])) ** (365.0/days)) - 1
+print ('CAGR =',str(round(cagr,4)*100)+"%")
+mu = cagr
+
+cervus['Returns'] = cervus['Adj Close'].pct_change()
+vol = cervus['Returns'].std()*math.sqrt(252)
+print ("Annual Volatility =",str(round(vol,4)*100)+"%")
+
+
+style.use('ggplot')
+
+start=dt.datetime(2014,12,31)
+end=dt.datetime(2019,12,31)
+
+prices=web.DataReader('CERV.TO','yahoo',start,end)['Close']
+returns=prices.pct_change()
+
+last_price=prices[-1]
+
+#Number of Simulations
+num_simulations=5000
+num_days=1260
+
+simulation_df=pd.DataFrame()
+
+for x in range(num_simulations):
+    count=0
+    daily_vol=returns.std()
+    
+    price_series=[]
+    
+    price=last_price*(1+np.random.normal(0,daily_vol))
+    price_series.append(price)
+    
+    for y in range(num_days):
+        price=price_series[count]*(1+np.random.normal(0,daily_vol))
+        price_series.append(price)
+        count+=1
+        
+    simulation_df[x]=price_series 
+    
+
+
+result=[]
+
+S=cervus['Adj Close'][-1]
+T=1260
+mu=0.1764
+vol=0.2701
+
+csfont = {'fontname':'Times New Roman'}
+
+for i in range(5000):
+    daily_returns=np.random.normal(mu/T,vol/math.sqrt(T),T)+1
+    price_list = [S]
+    for x in daily_returns:
+        price_list.append(price_list[-1]*x)
+    plt.plot(price_list,color='green')
+    result.append(price_list[-1])
+    plt.axhline(y=last_price,color='r',linestyle='-')
+    plt.xlabel('Day',**csfont)
+    plt.ylabel('Price',**csfont)
+    plt.suptitle('Monte Carlo Simulation:CERV',**csfont)
+plt.show()
+
+plt.hist(result,bins=100,color='green',edgecolor='black')
+plt.xlabel('Price',**csfont)
+plt.ylabel('Frequency',**csfont)
+plt.suptitle('Histogram:CERV',**csfont)
+plt.axvline(np.percentile(result,25), color='r', linestyle='dashed', linewidth=1)
+plt.axvline(np.percentile(result,75), color='r', linestyle='dashed', linewidth=1)
+plt.show()
+print("Expected Price=",round(np.mean(result),2))
+print("25% Quantile =",np.percentile(result,25))
+print("75% Quantile =",np.percentile(result,75))    
+
+df1= data.DataReader('CERV.TO','yahoo',start=dt.datetime(2014,12,31))
+df2= data.DataReader('XIU.TO','yahoo',start=dt.datetime(2014,12,31))
+
+return_cerv=df1.Close.pct_change()[1:]
+return_spy=df2.Close.pct_change()[1:]
+
+plt.figure()
+return_cerv.plot(color='green',label='Cervus',linewidth=0.5)
+return_spy.plot(color='grey',label='TSX',linewidth=0.5)
+plt.ylabel('Daily Returns: CERV & TSX',color='black')
+plt.legend()
+plt.show()
+
+import statsmodels.api as sm
+from statsmodels import regression
+
+X=return_spy.values
+Y=return_cerv.values
+
+def linreg(x,y):
+    x=sm.add_constant(x)
+    model=regression.linear_model.OLS(y,x).fit()
+    x=x[0:1]
+    return model.params[0],model.params[1]
+
+alpha, beta=linreg(X,Y)
+print('alpha:'+str(alpha))
+print('beta:'+str(beta))
+X2=np.linspace(X.min(),X.max(),5000)
+Y_hat=X2*beta+alpha
+
+plt.figure()
+plt.scatter(X,Y,alpha=0.4,color='green',edgecolor='black')
+plt.xlabel('TSX Daily Return',**csfont,color='black')
+plt.ylabel('CERV Daily Return',**csfont,color='black')
+
+plt.plot(X2,Y_hat,'r',alpha=0.4)
+plt.show()
