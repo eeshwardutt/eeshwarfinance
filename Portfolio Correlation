@@ -1,0 +1,95 @@
+import datetime
+from pandas_datareader import data as web
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.cm as cm
+import seaborn as sns
+
+def get_data(dataname, start_year):
+    companies = pd.read_csv(r'C:\Users\eeshwar.dutt\OneDrive - RS Energy Group\Desktop\CPMT\Tickers.csv')
+    companies["Ticker"] = companies["Tickers"]
+    companies = companies.set_index("Tickers")
+    start_date, end_date = datetime.datetime(start_year, 1, 1), datetime.datetime.today()
+    
+    data = web.DataReader(companies["Ticker"], 'yahoo', start_date, end_date)["Adj Close"];
+    isnull = data.isnull().sum()
+    for ticker in companies["Ticker"]:     #if too many null entries for given stock, exclude from analysis
+        if isnull[ticker] > 100:
+            data.drop(ticker, axis=1, inplace=True)
+    return data, companies
+    data = web.DataReader(companies["Ticker"], 'yahoo', start_date, end_date)["Adj Close"];
+
+    isnull = data.isnull().sum()
+    for ticker in companies["Ticker"]:     #if too many null entries for given stock, exclude from analysis
+        if isnull[ticker] > 100:
+            data.drop(ticker, axis=1, inplace=True)
+    return data, companies
+
+def process_data(df, window_size, smooth, diff): 
+    df = (df - df.median())/df.std()      #Scale Data
+    dfscaled = df.copy()
+    
+    if smooth == 1:                       #Smooth Data
+        df = df.rolling(window=window_size).mean()
+        df = df[(window_size-1):]
+        
+    if diff == 1:                         #Get Derivative of data
+        df = df.diff(axis=0)
+        df = df[1:]
+    return df, dfscaled
+
+index = "S&P"
+start_year=2014
+window=7
+
+data, companies = get_data(index, start_year)
+data, data_scaled = process_data(data, window, 1, 1)
+data.head()
+
+corr = data.corr()
+#Plot figsize
+fig, ax = plt.subplots(figsize=(20, 20))
+    #Generate Color Map
+colormap = sns.diverging_palette(220, 10, as_cmap=True)
+    #Generate Heat Map, allow annotations and place floats in map
+sns.heatmap(corr, cmap=colormap, annot=True, fmt=".2f")
+    #Apply xticks
+plt.xticks(range(len(corr.columns)), corr.columns);
+    #Apply yticks
+plt.yticks(range(len(corr.columns)), corr.columns)
+    #show plot
+plt.show()
+
+def heatMap(df, mirror):
+
+   # Create Correlation df
+   corr = df.corr()
+   # Plot figsize
+   fig, ax = plt.subplots(figsize=(20, 20))
+   # Generate Color Map
+   colormap = sns.diverging_palette(220, 10, as_cmap=True)
+   
+   if mirror == True:
+      #Generate Heat Map, allow annotations and place floats in map
+      sns.heatmap(corr, cmap=colormap, annot=True, fmt=".2f")
+      #Apply xticks
+      plt.xticks(range(len(corr.columns)), corr.columns);
+      #Apply yticks
+      plt.yticks(range(len(corr.columns)), corr.columns)
+      #show plot
+
+   else:
+      # Drop self-correlations
+      dropSelf = np.zeros_like(corr)
+      dropSelf[np.triu_indices_from(dropSelf)] = True
+      # Generate Color Map
+      colormap = sns.diverging_palette(220, 10, as_cmap=True)
+      # Generate Heat Map, allow annotations and place floats in map
+      sns.heatmap(corr, cmap=colormap, annot=True, fmt=".2f", mask=dropSelf)
+      # Apply xticks
+      plt.xticks(range(len(corr.columns)), corr.columns);
+      # Apply yticks
+      plt.yticks(range(len(corr.columns)), corr.columns)
+   # show plot
+   plt.show()
